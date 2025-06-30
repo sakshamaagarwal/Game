@@ -118,6 +118,7 @@ int main() {
         input();
         draw();
 
+        
         // Update previous positions
         prevAX = playerAX; prevAY = playerAY;
         prevBX = playerBX; prevBY = playerBY;
