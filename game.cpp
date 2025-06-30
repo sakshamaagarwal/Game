@@ -122,7 +122,7 @@ int main() {
         prevAX = playerAX; prevAY = playerAY;
         prevBX = playerBX; prevBY = playerBY;
 
-        Sleep(15);
+        Sleep(14);
         fc++;
     }
 
