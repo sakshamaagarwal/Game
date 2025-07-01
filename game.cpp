@@ -5,6 +5,14 @@ using namespace std;
 
 const int width = 61;
 const int height = 30;
+//bullet
+const int mexb=20;
+struct bull{
+int x,y;
+int x2,y2;
+bool active=false;
+};
+bull n[mexb];
 
 // Player A positions
 int playerAX = width / 4, playerAY = height - 1;
@@ -38,7 +46,19 @@ void hideCursor() {
     info.bVisible = FALSE;
     SetConsoleCursorInfo(consoleHandle, &info);
 }
+// upgrade bullet
+void bullup(){
+    for(int k=0;k<mexb;k++){
+    if(n[k].active){
+        n[k].y--;
+        if(n[k].y<0){
+            n[k].active=false;
+        }
+    }
 
+
+    }
+}
 // Draw the arena
 void draw() {
     std::cout << "\033[1;1H"; // Move cursor to top-left
@@ -49,6 +69,24 @@ void draw() {
     for (int y = 0; y < height; y++) {
         cout << "\n|";
         for (int x = 0; x < width; x++) {
+            //bullet 
+             bool draw=false;
+            for(int j=0;j<mexb;j++){
+                if(n[j].active){
+                if(x==n[j].x && y==n[j].y){
+                 cout<<"|";
+                  draw=true;
+                   continue;
+                  
+
+                }
+
+            }
+
+            }
+            if( draw){
+                continue;
+            }
             // Collision
             if (x == playerAX && y == playerAY && x == playerBX && y == playerBY) {
                 if (fc % 4 == 0) cout << red << COLLIDE_CHAR;
@@ -62,14 +100,14 @@ void draw() {
             // Player A
             if (x == playerAX && y == playerAY) {
                 if (fc % 2 == 0) cout << green << PLAYER_A_CHAR << reset;
-                else cout << " ";
+                else cout <<  red << PLAYER_A_CHAR;
                 continue;
             }
 
             // Player B
             if (x == playerBX && y == playerBY) {
                 if (fc % 2 == 0) cout << magenta << PLAYER_B_CHAR << reset;
-                else cout << " ";
+                else cout << blue << PLAYER_B_CHAR ;
                 continue;
             }
 
@@ -93,7 +131,17 @@ void draw() {
 void input() {
     if (_kbhit()) {
         char ch = _getch();
-
+           // bullet A (f)
+           if(ch=='f'){
+               for(int i=0;i<mexb;i++){
+                if(!n[i].active){
+                    n[i].active=true;
+                    n[i].x=playerAX;
+                     n[i].y=playerAY-1;
+                     break;
+                }
+               }
+           }
         // Player A (WASD)
         if (ch == 'a' && playerAX > 1) playerAX -= 2;
         else if (ch == 'd' && playerAX < width - 2) playerAX += 2;
@@ -101,10 +149,10 @@ void input() {
         else if (ch == 's' && playerAY < height - 1) playerAY++;
 
         // Player B (IJKL)
-        if (ch == 'j' && playerBX > 1) playerBX -= 2;
-        else if (ch == 'l' && playerBX < width - 2) playerBX += 2;
-        else if (ch == 'i' && playerBY > 0) playerBY--;
-        else if (ch == 'k' && playerBY < height - 1) playerBY++;
+        if (ch == 'k' && playerBX > 1) playerBX -= 2;
+        else if (ch == ';' && playerBX < width - 2) playerBX += 2;
+        else if (ch == 'o' && playerBY > 0) playerBY--;
+        else if (ch == 'l' && playerBY < height - 1) playerBY++;
 
         while (_kbhit()) _getch(); // Clear buffer
     }
@@ -116,6 +164,7 @@ int main() {
 
     while (true) {
         input();
+         bullup();
         draw();
 
         
@@ -123,7 +172,7 @@ int main() {
         prevAX = playerAX; prevAY = playerAY;
         prevBX = playerBX; prevBY = playerBY;
 
-        Sleep(10);
+        Sleep(1);
         fc++;
     }
 
