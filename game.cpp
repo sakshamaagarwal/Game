@@ -3,220 +3,131 @@
 #include <windows.h>
 using namespace std;
 
-const int width = 61;
-const int height = 30;
-//bullet
-const int mexb=20;
-struct bull{
-int x,y;
-int x2,y2;
-bool active=false;
-bool active2=false;
-};
-bull n[mexb];
+const int WIDTH = 61, HEIGHT = 30, MAX_BULLETS = 20;
 
-// Player A positions
-int playerAX = width / 4, playerAY = height - 1;
-int prevAX = playerAX, prevAY = playerAY;
+struct Bullet {
+    int x, y, direction;
+    bool active = false;
+} bullets[MAX_BULLETS];
 
-// Player B positions
-int playerBX = (width * 3) / 4, playerBY = height - 1;
-int prevBX = playerBX, prevBY = playerBY;
-
-int fc = 0;
-
-// Symbols
-const char PLAYER_A_CHAR = 'A';
-const char PLAYER_B_CHAR = 'B';
-const char COLLIDE_CHAR = '@';
-const char TRAIL_CHAR = '.';
+int playerAX = WIDTH / 4, playerAY = HEIGHT - 1, prevAX = playerAX, prevAY = playerAY;
+int playerBX = (WIDTH * 3) / 4, playerBY = HEIGHT - 1, prevBX = playerBX, prevBY = playerBY;
+int frameCount = 0;
 
 // Colors
-string green = "\033[1;32m";
-string magenta = "\033[1;35m";
-string red = "\033[1;31m";
-string blue = "\033[1;34m";
-string cyan = "\033[1;36m";
-string reset = "\033[0m";
+string colorGreen = "\033[1;32m";
+string colorMagenta = "\033[1;35m";
+string colorRed = "\033[1;31m";
+string colorBlue = "\033[1;34m";
+string colorCyan = "\033[1;36m";
+string colorReset = "\033[0m";
 
-// Hide cursor
 void hideCursor() {
-    HANDLE consoleHandle = GetStdHandle(STD_OUTPUT_HANDLE);
-    CONSOLE_CURSOR_INFO info;
-    info.dwSize = 100;
-    info.bVisible = FALSE;
-    SetConsoleCursorInfo(consoleHandle, &info);
+    HANDLE handle = GetStdHandle(STD_OUTPUT_HANDLE);
+    CONSOLE_CURSOR_INFO info = {100, FALSE};
+    SetConsoleCursorInfo(handle, &info);
 }
-// upgrade bullet
-void bullup(){
-    for(int k=0;k<mexb;k++){
-    if(n[k].active){
-        n[k].y--;
-        if(n[k].y<0){
-            n[k].active=false;
+
+void updateBullets() {
+    for (auto& bullet : bullets) {
+        if (bullet.active) {
+            bullet.y += bullet.direction;
+            if (bullet.y < 0 || bullet.y >= HEIGHT)
+                bullet.active = false;
         }
     }
-
-
-    }
-     for(int k=0;k<mexb;k++){
-    if(n[k].active2){
-        n[k].y2--;
-        if(n[k].y2<0){
-            n[k].active2=false;
-        }
-    }
-
-
-    }
-
-
 }
-// Draw the arena
+
 void draw() {
-    std::cout << "\033[1;1H"; // Move cursor to top-left
+    cout << "\033[1;1H";
+    for (int i = 0; i <= WIDTH; i++) cout << colorCyan << "_" << colorReset;
 
-    // Top border
-    for (int i = 0; i <= width; i++) cout << cyan << "_" << reset;
-
-    for (int y = 0; y < height; y++) {
+    for (int y = 0; y < HEIGHT; y++) {
         cout << "\n|";
-        for (int x = 0; x < width; x++) {
-            //bullet 
-             bool draw=false;
-            for(int j=0;j<mexb;j++){
-                if(n[j].active){
-                if(x==n[j].x && y==n[j].y){
-                 cout<<"|";
-                  draw=true;
-                   break;
-                  
+        for (int x = 0; x < WIDTH; x++) {
+            bool drawn = false;
 
+            for (auto& bullet : bullets) {
+                if (bullet.active && bullet.x == x && bullet.y == y) {
+                    cout << colorCyan << "|" << colorReset;
+                    drawn = true;
+                    break;
                 }
-
             }
+            if (drawn) continue;
 
-            }
-            if( draw){
-                continue;
-            }
-            //bullet 2
-             draw=false;
-            for(int j=0;j<mexb;j++){
-                if(n[j].active2){
-                if(x==n[j].x2 && y==n[j].y2){
-                 cout<<"|";
-                  draw=true;
-                   break;
-                  
-
-                }
-
-            }
-
-            }
-            if( draw){
-                continue;
-            }
-
-            // Collision
-            if (x == playerAX && y == playerAY && x == playerBX && y == playerBY) {
-                if (fc % 4 == 0) cout << red << COLLIDE_CHAR;
-                else if (fc % 2 == 0) cout << green << COLLIDE_CHAR;
-                else if (fc % 5 == 0) cout << blue << COLLIDE_CHAR;
-                else cout << " ";
-                cout << reset;
-                continue;
-            }
-
-            // Player A
-            if (x == playerAX && y == playerAY) {
-                if (fc % 2 == 0) cout << green << PLAYER_A_CHAR << reset;
-                else cout <<  red << PLAYER_A_CHAR;
-                continue;
-            }
-
-            // Player B
-            if (x == playerBX && y == playerBY) {
-                if (fc % 2 == 0) cout << magenta << PLAYER_B_CHAR << reset;
-                else cout << blue << PLAYER_B_CHAR ;
-                continue;
-            }
-
-            // Trails
-            if ((x == prevAX && y == prevAY) || (x == prevBX && y == prevBY)) {
-                cout << cyan << TRAIL_CHAR << reset;
-                continue;
-            }
-
-            cout << " ";
+            if (x == playerAX && y == playerAY && x == playerBX && y == playerBY)
+                cout << ((frameCount % 4 == 0) ? colorRed : (frameCount % 2 == 0) ? colorGreen : colorBlue) << '@' << colorReset;
+            else if (x == playerAX && y == playerAY)
+                cout << ((frameCount % 2 == 0) ? colorGreen : colorRed) << 'A' << colorReset;
+            else if (x == playerBX && y == playerBY)
+                cout << ((frameCount % 2 == 0) ? colorMagenta : colorBlue) << 'B' << colorReset;
+            else if ((x == prevAX && y == prevAY) || (x == prevBX && y == prevBY))
+                cout << colorCyan << '.' << colorReset;
+            else
+                cout << " ";
         }
         cout << "|";
     }
 
-    // Bottom border
     cout << "\n";
-    for (int i = 0; i <= width; i++) cout << magenta << "-" << reset;
+    for (int i = 0; i <= WIDTH; i++) cout << colorMagenta << "-" << colorReset;
 }
 
-// Handle input
-void input() {
+void handleInput() {
     if (_kbhit()) {
-        char ch = _getch();
-           // bullet A (f)
-           if(ch=='f'){
-               for(int i=0;i<mexb;i++){
-                if(!n[i].active){
-                    n[i].active=true;
-                    n[i].x=playerAX;
-                     n[i].y=playerAY-1;
-                     break;
-                }
-               }
-           }
-           //bullet B (j)
-            if(ch=='j'){
-               for(int i=0;i<mexb;i++){
-                if(!n[i].active2){
-                    n[i].active2=true;
-                    n[i].x2=playerBX;
-                     n[i].y2=playerBY-1;
-                     break;
-                }
-               }
-           }
-        // Player A (WASD)
-        if (ch == 'a' && playerAX > 1) playerAX -= 2;
-        else if (ch == 'd' && playerAX < width - 2) playerAX += 2;
-        else if (ch == 'w' && playerAY > 0) playerAY--;
-        else if (ch == 's' && playerAY < height - 1) playerAY++;
+        char key = _getch();
 
-        // Player B (IJKL)
-        if (ch == 'k' && playerBX > 1) playerBX -= 2;
-        else if (ch == ';' && playerBX < width - 2) playerBX += 2;
-        else if (ch == 'o' && playerBY > 0) playerBY--;
-        else if (ch == 'l' && playerBY < height - 1) playerBY++;
+        // Player A fires (F)
+        if (key == 'f') {
+            for (auto& bullet : bullets) {
+                if (!bullet.active) {
+                    bullet = {playerAX, playerAY - 1, -1, true};
+                    break;
+                }
+            }
+        }
 
-        while (_kbhit()) _getch(); // Clear buffer
+        // Player B fires (J)
+        if (key == 'j') {
+            for (auto& bullet : bullets) {
+                if (!bullet.active) {
+                    bullet = {playerBX, playerBY - 1, -1, true};
+                    break;
+                }
+            }
+        }
+
+        // Player A movement (WASD)
+        if (key == 'a' && playerAX > 1) playerAX -= 2;
+        else if (key == 'd' && playerAX < WIDTH - 2) playerAX += 2;
+        else if (key == 'w' && playerAY > 0) playerAY--;
+        else if (key == 's' && playerAY < HEIGHT - 1) playerAY++;
+
+        // Player B movement (O, L, K, ;)
+        if (key == 'k' && playerBX > 1) playerBX -= 2;
+        else if (key == ';' && playerBX < WIDTH - 2) playerBX += 2;
+        else if (key == 'o' && playerBY > 0) playerBY--;
+        else if (key == 'l' && playerBY < HEIGHT - 1) playerBY++;
+
+        while (_kbhit()) _getch(); // Clear input buffer
     }
 }
 
 int main() {
     hideCursor();
-    std::cout << "\033[2J\033[1;1H"; // Clear screen
+    cout << "\033[2J\033[1;1H"; // Clear screen
 
     while (true) {
-        input();
-         bullup();
+        handleInput();
+        updateBullets();
         draw();
 
-        
-        // Update previous positions
         prevAX = playerAX; prevAY = playerAY;
         prevBX = playerBX; prevBY = playerBY;
 
         Sleep(7);
-        fc++;
+        frameCount++;
     }
 
     return 0;
