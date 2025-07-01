@@ -3,7 +3,7 @@
 #include <windows.h>
 using namespace std;
 
-const int WIDTH = 61, HEIGHT = 30, MAX_BULLETS = 20;
+const int WIDTH = 61, HEIGHT = 30, MAX_BULLETS = 34;
 
 struct Bullet {
     int x, y, direction;
