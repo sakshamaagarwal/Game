@@ -11,6 +11,7 @@ struct bull{
 int x,y;
 int x2,y2;
 bool active=false;
+bool active2=false;
 };
 bull n[mexb];
 
@@ -58,6 +59,18 @@ void bullup(){
 
 
     }
+     for(int k=0;k<mexb;k++){
+    if(n[k].active2){
+        n[k].y2--;
+        if(n[k].y2<0){
+            n[k].active2=false;
+        }
+    }
+
+
+    }
+
+
 }
 // Draw the arena
 void draw() {
@@ -76,7 +89,7 @@ void draw() {
                 if(x==n[j].x && y==n[j].y){
                  cout<<"|";
                   draw=true;
-                   continue;
+                   break;
                   
 
                 }
@@ -87,6 +100,25 @@ void draw() {
             if( draw){
                 continue;
             }
+            //bullet 2
+             draw=false;
+            for(int j=0;j<mexb;j++){
+                if(n[j].active2){
+                if(x==n[j].x2 && y==n[j].y2){
+                 cout<<"|";
+                  draw=true;
+                   break;
+                  
+
+                }
+
+            }
+
+            }
+            if( draw){
+                continue;
+            }
+
             // Collision
             if (x == playerAX && y == playerAY && x == playerBX && y == playerBY) {
                 if (fc % 4 == 0) cout << red << COLLIDE_CHAR;
@@ -142,6 +174,17 @@ void input() {
                 }
                }
            }
+           //bullet B (j)
+            if(ch=='j'){
+               for(int i=0;i<mexb;i++){
+                if(!n[i].active2){
+                    n[i].active2=true;
+                    n[i].x2=playerBX;
+                     n[i].y2=playerBY-1;
+                     break;
+                }
+               }
+           }
         // Player A (WASD)
         if (ch == 'a' && playerAX > 1) playerAX -= 2;
         else if (ch == 'd' && playerAX < width - 2) playerAX += 2;
@@ -172,7 +215,7 @@ int main() {
         prevAX = playerAX; prevAY = playerAY;
         prevBX = playerBX; prevBY = playerBY;
 
-        Sleep(1);
+        Sleep(7);
         fc++;
     }
 
