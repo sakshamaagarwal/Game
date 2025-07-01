@@ -126,7 +126,7 @@ int main() {
         prevAX = playerAX; prevAY = playerAY;
         prevBX = playerBX; prevBY = playerBY;
 
-        Sleep(7);
+        Sleep(17);
         frameCount++;
     }
 
