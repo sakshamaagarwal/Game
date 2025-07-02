@@ -1,22 +1,23 @@
 #include <iostream>
 #include <conio.h>
 #include <windows.h>
-#include <cstdlib> 
+#include <cstdlib>
+#include <ctime>
 using namespace std;
 
-const int WIDTH = 41, HEIGHT = 30, MAX_BULLETS = 34, MAX_BOMBS = 4;
-bool Aalive=true,Balive=true;
+const int WIDTH = 30, HEIGHT = 30, MAX_BULLETS = 34, MAX_BOMBS = 4;
+bool Aalive = true, Balive = true;
+
 struct Bullet {
     int x, y, direction;
     bool active = false;
 } bullets[MAX_BULLETS];
 
 struct Bomb {
-    int x, y,direction;
+    int x, y, direction;
     bool active = false;
     int direction2;
 } bombs[MAX_BOMBS];
-int NOth=0;
 
 int playerAX = WIDTH / 4, playerAY = HEIGHT - 1, prevAX = playerAX, prevAY = playerAY;
 int playerBX = (WIDTH * 3) / 4, playerBY = HEIGHT - 1, prevBX = playerBX, prevBY = playerBY;
@@ -45,63 +46,58 @@ void updateBullets() {
         }
     }
 }
-void callbomb(){
-    
-        for(auto& bomb: bombs){
-            if(!bomb.active){
-                bomb ={rand() % ((WIDTH-2) - 1 + 1) + 1,0,+1,true,rand() % (2 - (-1) + 1) + (-1)};
+
+void callbomb() {
+    for (auto& bomb : bombs) {
+        if (!bomb.active) {
+            bomb = {
+                rand() % (WIDTH - 2) + 1,
+                0,
+                1,
+                true,
+                rand() % 3 - 1 // -1, 0, or 1
+            };
+        }
+    }
+}
+
+void checkBombPlayerCollision(Bomb& bomb) {
+    if (!bomb.active) return;
+
+    if (bomb.x == playerAX && bomb.y == playerAY) {
+        bomb.active = false;
+        Aalive = false;
+    }
+    if (bomb.x == playerBX && bomb.y == playerBY) {
+        bomb.active = false;
+        Balive = false;
+    }
+}
+
+void updatebomb() {
+    if (frameCount % 3 == 0) {
+        for (auto& bomb : bombs) {
+            if (bomb.active) {
+                bomb.y += bomb.direction;
+                bomb.x += bomb.direction2;
+                if (bomb.y < 0 || bomb.y >= HEIGHT || bomb.x < 0 || bomb.x >= WIDTH)
+                    bomb.active = false;
             }
         }
-    
-}
-void updatebomb(){
-     if(frameCount%3==0){
-        for(auto& bomb: bombs){
-            if(bomb.active){
-               bomb.y += bomb.direction; 
-                bomb.x += bomb.direction2;
+    }
 
-                if (bomb.y < 0 || bomb.y >= HEIGHT ||bomb.x < 0 || bomb.x >= WIDTH )
+    for (auto& bullet : bullets) {
+        for (auto& bomb : bombs) {
+            if (bullet.active && bomb.active && bullet.x == bomb.x && bullet.y == bomb.y) {
+                bullet.active = false;
                 bomb.active = false;
             }
         }
-     }
-
-    for(int i=0;i< MAX_BULLETS;i++){
-         for(int j=0;j<  MAX_BOMBS;j++){
-            if(bullets[i].x==bombs[j].x && bullets[i].y==bombs[j].y){
-                 bullets[i].active = false;
-                 bombs[j].active=false;
-
-
-            }
-
-
-         }
     }
-     
-         for(int j=0;j<  MAX_BOMBS;j++){
-            if(playerAX==bombs[j].x && playerAY==bombs[j].y){
-                 Aalive=false;
-                 bombs[j].active=false;
 
-
-            }
-
-
-         }
-           for(int j=0;j<  MAX_BOMBS;j++){
-            if(playerBX==bombs[j].x && playerBY==bombs[j].y){
-                 Balive=false;
-                 bombs[j].active=false;
-
-
-            }
-
-
-         }
-    
-
+    for (auto& bomb : bombs) {
+        checkBombPlayerCollision(bomb);
+    }
 }
 
 void draw() {
@@ -113,15 +109,14 @@ void draw() {
         for (int x = 0; x < WIDTH; x++) {
             bool drawn = false;
 
-             for (auto& bomb : bombs) {
+            for (auto& bomb : bombs) {
                 if (bomb.active && bomb.x == x && bomb.y == y) {
                     cout << colorRed << "O" << colorReset;
                     drawn = true;
                     break;
                 }
             }
-
-        if (drawn) continue;
+            if (drawn) continue;
 
             for (auto& bullet : bullets) {
                 if (bullet.active && bullet.x == x && bullet.y == y) {
@@ -148,13 +143,11 @@ void draw() {
 
     cout << "\n";
     for (int i = 0; i <= WIDTH; i++) {
-        int half=WIDTH/2;
-        if(i>=0 && i<half){
-        cout << colorMagenta << "-" << colorReset;
-    }
-        else{
-           cout << colorCyan << "-" << colorReset;
-        }
+        int half = WIDTH / 2;
+        if (i < half)
+            cout << colorMagenta << "-" << colorReset;
+        else
+            cout << colorCyan << "-" << colorReset;
     }
 }
 
@@ -162,7 +155,6 @@ void handleInput() {
     if (_kbhit()) {
         char key = _getch();
 
-        // Player A fires (F)
         if (key == 'f' && Aalive) {
             for (auto& bullet : bullets) {
                 if (!bullet.active) {
@@ -172,7 +164,6 @@ void handleInput() {
             }
         }
 
-        // Player B fires (J)
         if (key == 'j' && Balive) {
             for (auto& bullet : bullets) {
                 if (!bullet.active) {
@@ -182,30 +173,30 @@ void handleInput() {
             }
         }
 
-        // Player A movement (WASD)
-        if(Aalive){
-        if (key == 'a' && playerAX > 1) playerAX -= 2;
-        else if (key == 'd' && playerAX < WIDTH - 2) playerAX += 2;
-        else if (key == 'w' && playerAY > 0) playerAY--;
-        else if (key == 's' && playerAY < HEIGHT - 1) playerAY++;
+        if (Aalive) {
+            if (key == 'a' && playerAX > 1) playerAX -= 1;
+            else if (key == 'd' && playerAX < WIDTH - 2) playerAX += 1;
+            else if (key == 'w' && playerAY > 0) playerAY--;
+            else if (key == 's' && playerAY < HEIGHT - 1) playerAY++;
         }
-        // Player B movement (O, L, K, ;)
-        if(Balive){
-        if (key == 'k' && playerBX > 1) playerBX -= 2;
-        else if (key == ';' && playerBX < WIDTH - 2) playerBX += 2;
-        else if (key == 'o' && playerBY > 0) playerBY--;
-        else if (key == 'l' && playerBY < HEIGHT - 1) playerBY++;}
+
+        if (Balive) {
+            if (key == 'k' && playerBX > 1) playerBX -= 1;
+            else if (key == ';' && playerBX < WIDTH - 2) playerBX += 1;
+            else if (key == 'o' && playerBY > 0) playerBY--;
+            else if (key == 'l' && playerBY < HEIGHT - 1) playerBY++;
+        }
 
         while (_kbhit()) _getch(); // Clear input buffer
     }
 }
 
 int main() {
+    srand(time(0));
     hideCursor();
     cout << "\033[2J\033[1;1H"; // Clear screen
 
     while (Aalive && Balive) {
-
         handleInput();
         callbomb();
         updatebomb();
@@ -219,12 +210,11 @@ int main() {
         frameCount++;
     }
 
-    cout<<endl<<"game over"<<endl;
-          if(Aalive){
-            cout<<"A is winer"<<endl;
-          }
-          else{
-            cout<<"B is winer"<<endl;
-          }
+    cout << "\nGame Over\n";
+    if (Aalive)
+        cout << "Player A is the winner!\n";
+    else
+        cout << "Player B is the winner!\n";
+
     return 0;
 }
