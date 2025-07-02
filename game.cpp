@@ -22,7 +22,9 @@ struct Bomb {
     int x, y, direction, drift;
     bool active = false;
     Side_Bomb Side_Bombs[3];
-    string color; // NEW: random color for each bomb
+    string color;
+    bool exploding = false;
+    int explodeFrame = 0;
 } bombs[MAX_BOMBS];
 
 int playerAX = WIDTH / 4, playerAY = HEIGHT - 1, prevAX = playerAX, prevAY = playerAY;
@@ -33,15 +35,10 @@ int frameCount = 0;
 string green = "\033[1;32m", magenta = "\033[1;35m", red = "\033[1;31m";
 string blue = "\033[1;34m", cyan = "\033[1;36m", reset = "\033[0m";
 
-// NEW: Random color generator
 string getRandomColor() {
     string colors[] = {
-        "\033[1;31m", // red
-        "\033[1;32m", // green
-        "\033[1;33m", // yellow
-        "\033[1;34m", // blue
-        "\033[1;35m", // magenta
-        "\033[1;36m"  // cyan
+        "\033[1;31m", "\033[1;32m", "\033[1;33m",
+        "\033[1;34m", "\033[1;35m", "\033[1;36m"
     };
     return colors[rand() % 6];
 }
@@ -54,15 +51,24 @@ void hideCursor() {
 
 void spawnBomb() {
     for (auto& b : bombs) {
-        if (!b.active) {
+        if (!b.active && !b.exploding) {
             b = {rand() % (WIDTH - 2) + 1, 0, 1, rand() % 3 - 1, true};
-            b.color = getRandomColor(); // Assign random color
+            b.color = getRandomColor();
+            b.exploding = false;
+            b.explodeFrame = 0;
             break;
         }
     }
 }
 
 void updateBombs() {
+    // Clear old explosions
+    for (auto& b : bombs) {
+        if (b.exploding && frameCount > b.explodeFrame + 1) {
+            b.exploding = false;
+        }
+    }
+
     if (frameCount % 3 == 0) {
         for (auto& b : bombs) {
             if (b.active) {
@@ -74,7 +80,6 @@ void updateBombs() {
                     continue;
                 }
 
-                // Update side fragments
                 b.Side_Bombs[0] = {b.x - 1, b.y};
                 b.Side_Bombs[1] = {b.x + 1, b.y};
                 b.Side_Bombs[2] = {b.x, b.y - 1};
@@ -88,26 +93,56 @@ void updateBombs() {
 
             for (int i = 0; i < 3; i++) {
                 if (b.Side_Bombs[i].x == bl.x && b.Side_Bombs[i].y == bl.y) {
+                    b.exploding = true;
+                    b.explodeFrame = frameCount;
                     b.active = false;
                     bl.active = false;
                 }
             }
 
             if (b.x == bl.x && b.y == bl.y) {
+                b.exploding = true;
+                b.explodeFrame = frameCount;
                 b.active = false;
                 bl.active = false;
             }
         }
 
-        if (b.active && b.x == playerAX && b.y == playerAY) {
+      if (b.active) {
+    // Player A collision with main bomb
+    if (b.x == playerAX && b.y == playerAY) {
+        b.exploding = true;
+        b.explodeFrame = frameCount;
+        b.active = false;
+        Aalive = false;
+    }
+    // Player A collision with side bombs
+    for (int i = 0; i < 3; i++) {
+        if (b.Side_Bombs[i].x == playerAX && b.Side_Bombs[i].y == playerAY) {
+            b.exploding = true;
+            b.explodeFrame = frameCount;
             b.active = false;
             Aalive = false;
         }
+    }
 
-        if (b.active && b.x == playerBX && b.y == playerBY) {
+    // Player B collision with main bomb
+    if (b.x == playerBX && b.y == playerBY) {
+        b.exploding = true;
+        b.explodeFrame = frameCount;
+        b.active = false;
+        Balive = false;
+    }
+    // Player B collision with side bombs
+    for (int i = 0; i < 3; i++) {
+        if (b.Side_Bombs[i].x == playerBX && b.Side_Bombs[i].y == playerBY) {
+            b.exploding = true;
+            b.explodeFrame = frameCount;
             b.active = false;
             Balive = false;
         }
+    }
+}
     }
 
     if (rand() % 5 == 0) spawnBomb();
@@ -166,21 +201,30 @@ void draw() {
             bool drawn = false;
 
             for (auto& b : bombs) {
-                if (!b.active) continue;
-
-                for (int i = 0; i < 3; i++) {
-                    if (x == b.Side_Bombs[i].x && y == b.Side_Bombs[i].y) {
+                if (b.exploding && frameCount == b.explodeFrame + 1) {
+                    if (x == b.x && y == b.y) {
+                        cout << b.color << "." << reset;
+                        drawn = true;
+                    }
+                    for (int i = 0; i < 3; i++) {
+                        if (x == b.Side_Bombs[i].x && y == b.Side_Bombs[i].y) {
+                            cout << b.color << "." << reset;
+                            drawn = true;
+                        }
+                    }
+                } else if (b.active) {
+                    for (int i = 0; i < 3; i++) {
+                        if (x == b.Side_Bombs[i].x && y == b.Side_Bombs[i].y) {
+                            cout << b.color << "*" << reset;
+                            drawn = true;
+                            break;
+                        }
+                    }
+                    if (!drawn && x == b.x && y == b.y) {
                         cout << b.color << "*" << reset;
                         drawn = true;
-                        break;
                     }
                 }
-
-                if (!drawn && x == b.x && y == b.y) {
-                    cout << b.color << "*" << reset;
-                    drawn = true;
-                }
-
                 if (drawn) break;
             }
 
