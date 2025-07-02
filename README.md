@@ -1,48 +1,61 @@
 # 🎮 2-Player Shooter Game (C++ Console Game)
 
-This is a simple C++ console-based 2-player shooting game built using only standard libraries like `<windows.h>`, `<conio.h>`, and `<iostream>`. It's a fun project that I created with the help of ChatGPT, and though it's not perfect yet, it's been an exciting learning journey! 🚀
+This is a simple C++ console-based 2-player shooting game built using only standard libraries like `<windows.h>`, `<conio.h>`, and `<iostream>`. It's a fun project that I created as a way to practice real-time logic and game mechanics.
 
 ---
 
 ## 🧪 Current Status
 
-The current version (`game`) is playable but still has a few bugs and performance issues. I plan to polish it in future updates.
+The main game file (`game`) is **bug-free and runs smoothly**, but it does **not include** timer or score calculation features yet.
 
-I've also created a beta version (`game2_beta`) that includes:
-- ⏱️ A working game timer
-- 🏆 Score tracking for both players  
-However, it's not completely smooth or bug-free at the moment.
+There is also a beta version (`game2_beta`) which includes:
+- ⏱️ Timer system
+- 🏆 Score tracking for both players
+
+⚠️ `game2_beta` was made with help from **ChatGPT**, and while it introduces timer and scoring, it still has a few bugs and performance issues.
+
+Both `game_file_for_pr` and `game2_beta` have the same code and are open for contributions.
+
+---
+
+## 🎯 Game Rules & Features
+
+- 2-player real-time shooting game in console
+- Bombs spawn randomly and explode on bullet collision
+- Side-bomb effect (mini explosions on either side)
+- Player A controls: `W A S D` to move, `F` to shoot  
+- Player B controls: `I J K L` to move, `H` to shoot  
+- If a player is hit by a bomb or its fragments, they are eliminated
+- Last player standing wins the game  
+- In beta: Highest score at the end of the timer wins
 
 ---
 
 ## 📅 Future Plans
 
-I plan to work on a more refined version (`game2_beta`) possibly in **2026 or 2027**, once I’ve gained more experience and improved my coding skills for internships and real-world projects.
-
-Here's what I'm planning for future updates:
+I plan to expand the game in **2026 or 2027** with features like:
 - 💥 Power-ups (shields, rapid fire, speed boost)
-- ❤️ Health and healing system
-- 🤖 AI-controlled bot enemy
-- 🧨 Multi-hit bombs with cool animations
-- 🎨 Smoother animations and better visual effects
-- 🎵 Realistic sound effects (using audio files instead of `Beep()`)
+- ❤️ Health system & healing pickups
+- 🤖 AI enemy bots
+- 🧨 Multi-hit bombs with larger explosions
+- 🎨 Visual animations and particle effects
+- 🎵 Real sound effects using audio files
 
 ---
 
 ## 🤝 Want to Contribute?
 
-If you're interested in fixing bugs or adding features to the game, contributions are **most welcome**! 🎉  
-You can work on either:
-- `game2_beta` – the timer + score version
-- `game_file_for_pr` – same as above, intended for contributions
+If you're interested in fixing bugs or adding features to the game, you're **most welcome**!  
+You can contribute to:
+- `game2_beta` – includes timer and score but needs improvements
+- `game_file_for_pr` – same as above, intended for pull requests
 
-Feel free to fork the repo and open a pull request!
+Fork the repo and submit a PR!
 
 ---
 
 ## 🙏 Final Note
 
-I'm currently focusing on improving my overall coding skills and preparing for internships. Once I’ve built stronger fundamentals, I’ll return to make this game more powerful, smoother, and even more fun to play.
+I'm currently focusing on **DSA and internship preparation**, so major updates will come later.
 
-Thanks for checking out the project! ❤️
-
+Thanks for checking out the project — I hope you enjoy it! ❤️
