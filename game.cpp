@@ -5,7 +5,7 @@
 #include <ctime>
 using namespace std;
 
-const int WIDTH = 30, HEIGHT = 30, MAX_BULLETS = 34, MAX_BOMBS = 4;
+const int WIDTH = 30, HEIGHT = 25, MAX_BULLETS = 34, MAX_BOMBS = 6;
 bool Aalive = true, Balive = true;
 
 struct Bullet {
@@ -14,9 +14,8 @@ struct Bullet {
 } bullets[MAX_BULLETS];
 
 struct Bomb {
-    int x, y, direction;
+    int x, y, direction, drift;
     bool active = false;
-    int direction2;
 } bombs[MAX_BOMBS];
 
 int playerAX = WIDTH / 4, playerAY = HEIGHT - 1, prevAX = playerAX, prevAY = playerAY;
@@ -24,117 +23,121 @@ int playerBX = (WIDTH * 3) / 4, playerBY = HEIGHT - 1, prevBX = playerBX, prevBY
 int frameCount = 0;
 
 // Colors
-string colorGreen = "\033[1;32m";
-string colorMagenta = "\033[1;35m";
-string colorRed = "\033[1;31m";
-string colorBlue = "\033[1;34m";
-string colorCyan = "\033[1;36m";
-string colorReset = "\033[0m";
+string green = "\033[1;32m", magenta = "\033[1;35m", red = "\033[1;31m";
+string blue = "\033[1;34m", cyan = "\033[1;36m", reset = "\033[0m";
 
 void hideCursor() {
-    HANDLE handle = GetStdHandle(STD_OUTPUT_HANDLE);
+    HANDLE h = GetStdHandle(STD_OUTPUT_HANDLE);
     CONSOLE_CURSOR_INFO info = {100, FALSE};
-    SetConsoleCursorInfo(handle, &info);
+    SetConsoleCursorInfo(h, &info);
+}
+
+void spawnBomb() {
+    for (auto& b : bombs) {
+        if (!b.active) {
+            b = {rand() % (WIDTH - 2) + 1, 0, 1, rand() % 3 - 1, true};
+            break;
+        }
+    }
+}
+
+void updateBombs() {
+    if (frameCount % 3 == 0) {
+        for (auto& b : bombs) {
+            if (b.active) {
+                b.y += b.direction;
+                b.x += b.drift;
+                if (b.y >= HEIGHT || b.x <= 0 || b.x >= WIDTH) b.active = false;
+            }
+        }
+    }
+
+    for (auto& b : bombs) {
+        for (auto& bl : bullets) {
+            if (b.active && bl.active && b.x == bl.x && b.y == bl.y) {
+                b.active = false;
+                bl.active = false;
+            }
+        }
+        if (b.active && b.x == playerAX && b.y == playerAY) {
+            b.active = false;
+            Aalive = false;
+        }
+        if (b.active && b.x == playerBX && b.y == playerBY) {
+            b.active = false;
+            Balive = false;
+        }
+    }
+
+    if (rand() % 5 == 0) spawnBomb();
 }
 
 void updateBullets() {
-    for (auto& bullet : bullets) {
-        if (bullet.active) {
-            bullet.y += bullet.direction;
-            if (bullet.y < 0 || bullet.y >= HEIGHT)
-                bullet.active = false;
+    for (auto& b : bullets) {
+        if (b.active) {
+            b.y += b.direction;
+            if (b.y < 0 || b.y >= HEIGHT) b.active = false;
         }
     }
 }
 
-void callbomb() {
-    for (auto& bomb : bombs) {
-        if (!bomb.active) {
-            bomb = {
-                rand() % (WIDTH - 2) + 1,
-                0,
-                1,
-                true,
-                rand() % 3 - 1 // -1, 0, or 1
-            };
-        }
-    }
-}
-
-void checkBombPlayerCollision(Bomb& bomb) {
-    if (!bomb.active) return;
-
-    if (bomb.x == playerAX && bomb.y == playerAY) {
-        bomb.active = false;
-        Aalive = false;
-    }
-    if (bomb.x == playerBX && bomb.y == playerBY) {
-        bomb.active = false;
-        Balive = false;
-    }
-}
-
-void updatebomb() {
-    if (frameCount % 3 == 0) {
-        for (auto& bomb : bombs) {
-            if (bomb.active) {
-                bomb.y += bomb.direction;
-                bomb.x += bomb.direction2;
-                if (bomb.y < 0 || bomb.y >= HEIGHT || bomb.x < 0 || bomb.x >= WIDTH)
-                    bomb.active = false;
+void handleInput() {
+    if (Aalive) {
+        if (GetAsyncKeyState('A') & 0x8000 && playerAX > 1) playerAX--;
+        if (GetAsyncKeyState('D') & 0x8000 && playerAX < WIDTH - 2) playerAX++;
+        if (GetAsyncKeyState('W') & 0x8000 && playerAY > 0) playerAY--;
+        if (GetAsyncKeyState('S') & 0x8000 && playerAY < HEIGHT - 1) playerAY++;
+        if (GetAsyncKeyState('F') & 0x8000) {
+            for (auto& b : bullets) {
+                if (!b.active) {
+                    b = {playerAX, playerAY - 1, -1, true};
+                    break;
+                }
             }
         }
     }
 
-    for (auto& bullet : bullets) {
-        for (auto& bomb : bombs) {
-            if (bullet.active && bomb.active && bullet.x == bomb.x && bullet.y == bomb.y) {
-                bullet.active = false;
-                bomb.active = false;
+    if (Balive) {
+        if (GetAsyncKeyState('J') & 0x8000 && playerBX > 1) playerBX--;
+        if (GetAsyncKeyState('L') & 0x8000 && playerBX < WIDTH - 2) playerBX++;
+        if (GetAsyncKeyState('I') & 0x8000 && playerBY > 0) playerBY--;
+        if (GetAsyncKeyState('K') & 0x8000 && playerBY < HEIGHT - 1) playerBY++;
+        if (GetAsyncKeyState('H') & 0x8000) {
+            for (auto& b : bullets) {
+                if (!b.active) {
+                    b = {playerBX, playerBY - 1, -1, true};
+                    break;
+                }
             }
         }
-    }
-
-    for (auto& bomb : bombs) {
-        checkBombPlayerCollision(bomb);
     }
 }
 
 void draw() {
     cout << "\033[1;1H";
-    for (int i = 0; i <= WIDTH; i++) cout << colorCyan << "_" << colorReset;
+    for (int i = 0; i <= WIDTH; i++) cout << cyan << "_" << reset;
 
     for (int y = 0; y < HEIGHT; y++) {
         cout << "\n|";
         for (int x = 0; x < WIDTH; x++) {
             bool drawn = false;
 
-            for (auto& bomb : bombs) {
-                if (bomb.active && bomb.x == x && bomb.y == y) {
-                    cout << colorRed << "O" << colorReset;
-                    drawn = true;
-                    break;
-                }
+            for (auto& b : bombs)
+                if (b.active && b.x == x && b.y == y) { cout << red << "O" << reset; drawn = true; break; }
+
+            if (!drawn) {
+                for (auto& bl : bullets)
+                    if (bl.active && bl.x == x && bl.y == y) { cout << cyan << "|" << reset; drawn = true; break; }
             }
+
             if (drawn) continue;
 
-            for (auto& bullet : bullets) {
-                if (bullet.active && bullet.x == x && bullet.y == y) {
-                    cout << colorCyan << "|" << colorReset;
-                    drawn = true;
-                    break;
-                }
-            }
-            if (drawn) continue;
-
-            if (x == playerAX && y == playerAY && x == playerBX && y == playerBY)
-                cout << ((frameCount % 4 == 0) ? colorRed : (frameCount % 2 == 0) ? colorGreen : colorBlue) << '@' << colorReset;
-            else if (x == playerAX && y == playerAY && Aalive)
-                cout << ((frameCount % 2 == 0) ? colorGreen : colorRed) << 'A' << colorReset;
+            if (x == playerAX && y == playerAY && Aalive)
+                cout << ((frameCount % 2 == 0) ? green : red) << 'A' << reset;
             else if (x == playerBX && y == playerBY && Balive)
-                cout << ((frameCount % 2 == 0) ? colorMagenta : colorBlue) << 'B' << colorReset;
+                cout << ((frameCount % 2 == 0) ? magenta : blue) << 'B' << reset;
             else if ((x == prevAX && y == prevAY) || (x == prevBX && y == prevBY))
-                cout << colorCyan << '.' << colorReset;
+                cout << cyan << '.' << reset;
             else
                 cout << " ";
         }
@@ -142,65 +145,19 @@ void draw() {
     }
 
     cout << "\n";
-    for (int i = 0; i <= WIDTH; i++) {
-        int half = WIDTH / 2;
-        if (i < half)
-            cout << colorMagenta << "-" << colorReset;
-        else
-            cout << colorCyan << "-" << colorReset;
-    }
-}
-
-void handleInput() {
-    if (_kbhit()) {
-        char key = _getch();
-
-        if (key == 'f' && Aalive) {
-            for (auto& bullet : bullets) {
-                if (!bullet.active) {
-                    bullet = {playerAX, playerAY - 1, -1, true};
-                    break;
-                }
-            }
-        }
-
-        if (key == 'j' && Balive) {
-            for (auto& bullet : bullets) {
-                if (!bullet.active) {
-                    bullet = {playerBX, playerBY - 1, -1, true};
-                    break;
-                }
-            }
-        }
-
-        if (Aalive) {
-            if (key == 'a' && playerAX > 1) playerAX -= 1;
-            else if (key == 'd' && playerAX < WIDTH - 2) playerAX += 1;
-            else if (key == 'w' && playerAY > 0) playerAY--;
-            else if (key == 's' && playerAY < HEIGHT - 1) playerAY++;
-        }
-
-        if (Balive) {
-            if (key == 'k' && playerBX > 1) playerBX -= 1;
-            else if (key == ';' && playerBX < WIDTH - 2) playerBX += 1;
-            else if (key == 'o' && playerBY > 0) playerBY--;
-            else if (key == 'l' && playerBY < HEIGHT - 1) playerBY++;
-        }
-
-        while (_kbhit()) _getch(); // Clear input buffer
-    }
+    for (int i = 0; i <= WIDTH; i++)
+        cout << ((i < WIDTH / 2) ? magenta : cyan) << "-" << reset;
 }
 
 int main() {
     srand(time(0));
     hideCursor();
-    cout << "\033[2J\033[1;1H"; // Clear screen
+    cout << "\033[2J\033[1;1H";
 
     while (Aalive && Balive) {
         handleInput();
-        callbomb();
-        updatebomb();
         updateBullets();
+        updateBombs();
         draw();
 
         prevAX = playerAX; prevAY = playerAY;
@@ -210,11 +167,7 @@ int main() {
         frameCount++;
     }
 
-    cout << "\nGame Over\n";
-    if (Aalive)
-        cout << "Player A is the winner!\n";
-    else
-        cout << "Player B is the winner!\n";
-
+    cout << "\n\n" << red << "Game Over!\n" << reset;
+    cout << (Aalive ? green + "Player A Wins!\n" : magenta + "Player B Wins!\n") << reset;
     return 0;
 }
