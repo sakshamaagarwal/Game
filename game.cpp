@@ -6,6 +6,7 @@
 using namespace std;
 
 const int WIDTH = 30, HEIGHT = 25, MAX_BULLETS = 34, MAX_BOMBS = 6;
+
 bool Aalive = true, Balive = true;
 
 struct Bullet {
@@ -13,9 +14,14 @@ struct Bullet {
     bool active = false;
 } bullets[MAX_BULLETS];
 
+struct Side_Bomb {
+    int x, y;
+};
+
 struct Bomb {
     int x, y, direction, drift;
     bool active = false;
+    Side_Bomb Side_Bombs[3];
 } bombs[MAX_BOMBS];
 
 int playerAX = WIDTH / 4, playerAY = HEIGHT - 1, prevAX = playerAX, prevAY = playerAY;
@@ -47,22 +53,45 @@ void updateBombs() {
             if (b.active) {
                 b.y += b.direction;
                 b.x += b.drift;
-                if (b.y >= HEIGHT || b.x <= 0 || b.x >= WIDTH) b.active = false;
+                if (b.y >= HEIGHT || b.x <= 0 || b.x >= WIDTH) {
+                    b.active = false;
+                    continue;
+                }
+
+                // Update side fragments
+                b.Side_Bombs[0] = {b.x - 1, b.y};
+                b.Side_Bombs[1] = {b.x + 1, b.y};
+                b.Side_Bombs[2] = {b.x, b.y - 1};
             }
         }
     }
 
     for (auto& b : bombs) {
         for (auto& bl : bullets) {
-            if (b.active && bl.active && b.x == bl.x && b.y == bl.y) {
+            if (!b.active || !bl.active) continue;
+
+            // Check side fragments
+            for (int i = 0; i < 3; i++) {
+                if (b.Side_Bombs[i].x == bl.x && b.Side_Bombs[i].y == bl.y) {
+                    b.active = false;
+                    bl.active = false;
+                }
+            }
+
+            // Check main bomb
+            if (b.x == bl.x && b.y == bl.y) {
                 b.active = false;
                 bl.active = false;
             }
         }
+
+        // Player A collision
         if (b.active && b.x == playerAX && b.y == playerAY) {
             b.active = false;
             Aalive = false;
         }
+
+        // Player B collision
         if (b.active && b.x == playerBX && b.y == playerBY) {
             b.active = false;
             Balive = false;
@@ -122,12 +151,32 @@ void draw() {
         for (int x = 0; x < WIDTH; x++) {
             bool drawn = false;
 
-            for (auto& b : bombs)
-                if (b.active && b.x == x && b.y == y) { cout << red << "O" << reset; drawn = true; break; }
+            for (auto& b : bombs) {
+                if (!b.active) continue;
+
+                for (int i = 0; i < 3; i++) {
+                    if (x == b.Side_Bombs[i].x && y == b.Side_Bombs[i].y) {
+                        cout << green << "*" << reset;
+                        drawn = true;
+                        break;
+                    }
+                }
+
+                if (!drawn && x == b.x && y == b.y) {
+                    cout << green << "*" << reset;
+                    drawn = true;
+                }
+
+                if (drawn) break;
+            }
 
             if (!drawn) {
                 for (auto& bl : bullets)
-                    if (bl.active && bl.x == x && bl.y == y) { cout << cyan << "|" << reset; drawn = true; break; }
+                    if (bl.active && bl.x == x && bl.y == y) {
+                        cout << cyan << "|" << reset;
+                        drawn = true;
+                        break;
+                    }
             }
 
             if (drawn) continue;
