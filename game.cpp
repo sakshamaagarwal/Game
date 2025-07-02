@@ -48,6 +48,34 @@ void hideCursor() {
     CONSOLE_CURSOR_INFO info = {100, FALSE};
     SetConsoleCursorInfo(h, &info);
 }
+void playShootSound(char ch) {
+    if(ch =='y')
+    Beep(600, 100); // Soft laser-like pulse
+}
+
+void playBombDestroyedSound(char ch) {
+    if(ch =='y')
+    Beep(500, 120); // Deeper pop-like tone
+}
+
+void playPlayerHitSound(char ch) {
+    if(ch =='y')
+    Beep(450, 180); // Thumpy, heavier warning
+}
+
+void playHealthPickupSound(char ch) {
+    if(ch =='y')
+    Beep(700, 120); // Friendly mid-tone blip
+}
+
+void playGameOverSound(char ch) {
+    if(ch =='y'){
+    Beep(400, 300); // Slow fade-out style tone
+    Sleep(100);
+    Beep(300, 400);}
+}
+
+
 
 void spawnBomb() {
     for (auto& b : bombs) {
@@ -61,7 +89,7 @@ void spawnBomb() {
     }
 }
 
-void updateBombs() {
+void updateBombs( char ch) {
     // Clear old explosions
     for (auto& b : bombs) {
         if (b.exploding && frameCount > b.explodeFrame + 1) {
@@ -93,6 +121,7 @@ void updateBombs() {
 
             for (int i = 0; i < 3; i++) {
                 if (b.Side_Bombs[i].x == bl.x && b.Side_Bombs[i].y == bl.y) {
+                    playBombDestroyedSound(ch);
                     b.exploding = true;
                     b.explodeFrame = frameCount;
                     b.active = false;
@@ -101,6 +130,7 @@ void updateBombs() {
             }
 
             if (b.x == bl.x && b.y == bl.y) {
+                playBombDestroyedSound(ch);
                 b.exploding = true;
                 b.explodeFrame = frameCount;
                 b.active = false;
@@ -157,7 +187,7 @@ void updateBullets() {
     }
 }
 
-void handleInput() {
+void handleInput(char ch) {
     if (Aalive) {
         if (GetAsyncKeyState('A') & 0x8000 && playerAX > 1) playerAX--;
         if (GetAsyncKeyState('D') & 0x8000 && playerAX < WIDTH - 2) playerAX++;
@@ -165,6 +195,7 @@ void handleInput() {
         if (GetAsyncKeyState('S') & 0x8000 && playerAY < HEIGHT - 1) playerAY++;
 
         if (GetAsyncKeyState('F') & 0x8000) {
+             playShootSound(ch);
             for (auto& b : bullets) {
                 if (!b.active) {
                     b = {playerAX, playerAY - 1, -1, true};
@@ -181,6 +212,7 @@ void handleInput() {
         if (GetAsyncKeyState('K') & 0x8000 && playerBY < HEIGHT - 1) playerBY++;
 
         if (GetAsyncKeyState('H') & 0x8000) {
+             playShootSound(ch);
             for (auto& b : bullets) {
                 if (!b.active) {
                     b = {playerBX, playerBY - 1, -1, true};
@@ -259,21 +291,25 @@ void draw() {
 int main() {
     srand(time(0));
     hideCursor();
+    char ch;
+    cout<<"do you want sound on tp y for yes other wise type any charcter: ";
+    cin>>ch;
     cout << "\033[2J\033[1;1H";
 
+
     while (Aalive && Balive) {
-        handleInput();
+        handleInput(ch);
         updateBullets();
-        updateBombs();
+        updateBombs(ch);
         draw();
 
         prevAX = playerAX; prevAY = playerAY;
         prevBX = playerBX; prevBY = playerBY;
 
-        Sleep(17);
+        Sleep(1);
         frameCount++;
     }
-
+       playGameOverSound(ch) ;
     cout << "\n\n" << red << "Game Over!\n" << reset;
     cout << (Aalive ? green + "Player A Wins!\n" : magenta + "Player B Wins!\n") << reset;
     return 0;
