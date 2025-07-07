@@ -56,6 +56,4 @@ Feel free to fork the repo and open a pull request.
 
 ## 🙏 Final Note
 
-I'm currently focused on **DSA and internship preparation**, so active development is paused for now. But I look forward to returning and improving the game further in the future.
-
-Thanks for checking out the project! ❤️
+- “This was my first C++ project. I’ve since moved on to building dev tools and SaaS products, but I’m proud of what I learned here.” ❤️
